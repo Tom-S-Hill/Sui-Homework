@@ -1,10 +1,10 @@
 module sui_homework::sui_homework;
 
-use sui::clock::{Self, Clock};
+use sui::clock;
 use sui::event;
 use sui::object;
 use sui::transfer;
-use sui::tx_context::{Self, TxContext};
+use sui::tx_context;
 
 public struct Counter has key {
     id: UID,
@@ -21,12 +21,12 @@ public struct CounterCreated has copy, drop {
 
 public struct CounterIncremented has copy, drop {
     owner: address,
-    counter: object::ID,
+    counter_id: object::ID,
     new_value: u64,
 }
 
-public fun create_counter(clock: &Clock, ctx: &mut TxContext) {
-    let time = Clock::now_ms(clock);
+public fun create_counter(clock: &clock::Clock, ctx: &mut TxContext) {
+    let time = clock::timestamp_ms(clock);
     let counter = Counter {
         id: object::new(ctx),
         owner: ctx.sender(),
@@ -43,7 +43,7 @@ public fun create_counter(clock: &Clock, ctx: &mut TxContext) {
 }
 
 public fun increment(counter: &mut Counter, ctx: &mut TxContext) {
-    let sender = TxContext::sender(ctx);
+    let sender = tx_context::sender(ctx);
     assert!(sender == counter.owner, 0);
     counter.value = counter.value + 1;
 
