@@ -1,6 +1,7 @@
 module sui_homework::sui_homework;
 
 use sui::clock::{Self, Clock};
+use sui::event;
 use sui::object;
 use sui::transfer;
 use sui::tx_context::{Self, TxContext};
@@ -12,6 +13,18 @@ public struct Counter has key {
     timestamp: u64,
 }
 
+public struct CounterCreated has copy, drop {
+    owner: address,
+    counter_id: object::ID,
+    timestamp: u64,
+}
+
+public struct CounterIncremented has copy, drop {
+    owner: address,
+    counter: object::ID,
+    new_value: u64,
+}
+
 public fun create_counter(clock: &Clock, ctx: &mut TxContext) {
     let time = Clock::now_ms(clock);
     let counter = Counter {
@@ -20,11 +33,25 @@ public fun create_counter(clock: &Clock, ctx: &mut TxContext) {
         value: 0,
         timestamp: time,
     };
+
+    event::emit(CounterCreated {
+        owner: ctx.sender(),
+        counter_id: object::id(&counter),
+        timestamp: time,
+    });
     transfer::transfer(counter, ctx.sender())
 }
 
 public fun increment(counter: &mut Counter, ctx: &mut TxContext) {
+    let sender = TxContext::sender(ctx);
+    assert!(sender == counter.owner, 0);
     counter.value = counter.value + 1;
+
+    event::emit(CounterIncremented {
+        owner: ctx.sender(),
+        counter_id: object::id(counter),
+        new_value: counter.value,
+    })
 }
 
 public fun get_value(counter: &Counter): u64 {
